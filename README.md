@@ -15,3 +15,4 @@ If you don't already have `~amd64` for `rxvt-unicode` then you should put this i
 
 In your `package.use` you have to enable `wide-glyphs` USE flag
 
+If you want truecolor support then you need to enable both `24-bit-color` and `256-color` USE flags
