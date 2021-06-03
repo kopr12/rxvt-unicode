@@ -1,44 +1,42 @@
-# Copyright 1999-2020 Gentoo Authors
+# Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-inherit autotools desktop
+
+inherit autotools desktop flag-o-matic systemd prefix
 
 DESCRIPTION="rxvt clone with xft and unicode support"
 HOMEPAGE="http://software.schmorp.de/pkg/rxvt-unicode.html"
-SRC_URI="http://dist.schmorp.de/rxvt-unicode/Attic/${P}.tar.bz2"
+SRC_URI="http://dist.schmorp.de/rxvt-unicode/${P}.tar.bz2"
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86 ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~x86-macos ~sparc-solaris"
-IUSE="256-color 24-bit-color blink fading-colors +font-styles gdk-pixbuf iso14755 +mousewheel +perl startup-notification unicode3 +utmp wide-glyphs +wtmp xft"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86 ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris"
+IUSE="256-color 24-bit-color blink fading-colors +font-styles gdk-pixbuf iso14755 +mousewheel
+	+perl startup-notification unicode3 +utmp wide-glyphs +wtmp xft"
 RESTRICT="test"
 
-RDEPEND="
-	>=sys-libs/ncurses-5.7-r6:=
+RDEPEND=">=sys-libs/ncurses-5.7-r6:=
 	media-libs/fontconfig
 	x11-libs/libX11
 	x11-libs/libXrender
+	x11-libs/libXt
 	gdk-pixbuf? ( x11-libs/gdk-pixbuf )
 	kernel_Darwin? ( dev-perl/Mac-Pasteboard )
 	perl? ( dev-lang/perl:= )
 	startup-notification? ( x11-libs/startup-notification )
-	xft? ( x11-libs/libXft )
-"
-DEPEND="
-	${RDEPEND}
-	virtual/pkgconfig
-	x11-base/xorg-proto
-"
+	xft? ( x11-libs/libXft )"
+DEPEND="${RDEPEND}
+	x11-base/xorg-proto"
+BDEPEND="virtual/pkgconfig"
+# WARNING: will bdepend on >=sys-devel/autoconf-2.71 (masked as of 2021-05-16) if eautoreconf has to be called
+
 PATCHES=(
 	"${FILESDIR}"/${PN}-9.06-case-insensitive-fs.patch
 	"${FILESDIR}"/${PN}-9.21-xsubpp.patch
-	"${FILESDIR}"/enable-wide-glyphs.patch
-	"${FILESDIR}"/font-width-fix.patch
-	"${FILESDIR}"/line-spacing-fix.patch
-	"${FILESDIR}"/sgr-mouse-mode.patch
-	"${FILESDIR}"/add-space-to-extent_test_chars.patch
 	"${FILESDIR}"/24-bit-color.patch
+	"${FILESDIR}"/enable-wide-glyphs.patch
+	"${FILESDIR}"/improve-font-rendering.patch
 )
 DOCS=(
 	Changes
@@ -55,7 +53,8 @@ src_prepare() {
 	# kill the rxvt-unicode terminfo file - #192083
 	sed -i -e "/rxvt-unicode.terminfo/d" doc/Makefile.in || die "sed failed"
 
-	eautoreconf
+	# use xsubpp from Prefix - #506500
+	hprefixify -q '"' -w "/xsubpp/" src/Makefile.in
 }
 
 src_configure() {
@@ -88,6 +87,13 @@ src_compile() {
 
 src_install() {
 	default
+
+	insinto /usr/lib64/urxvt/perl
+	doins  "${FILESDIR}"/resize-font
+	doins  "${FILESDIR}"/keyboard-select
+
+	#systemd_douserunit "${FILESDIR}"/urxvtd.service
+	#systemd_douserunit "${FILESDIR}"/urxvtd.socket
 
 	make_desktop_entry urxvt rxvt-unicode utilities-terminal \
 		"System;TerminalEmulator"
