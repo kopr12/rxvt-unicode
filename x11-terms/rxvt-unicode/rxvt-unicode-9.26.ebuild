@@ -88,10 +88,6 @@ src_compile() {
 src_install() {
 	default
 
-	insinto /usr/lib64/urxvt/perl
-	doins  "${FILESDIR}"/resize-font
-	doins  "${FILESDIR}"/keyboard-select
-
 	#systemd_douserunit "${FILESDIR}"/urxvtd.service
 	#systemd_douserunit "${FILESDIR}"/urxvtd.socket
 
